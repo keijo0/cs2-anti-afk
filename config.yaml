@@ -15,14 +15,13 @@ interval_max: 10
 #   key_right     - presses D
 #   mouse_move    - small random mouse movement
 actions:
-  - key_forward
   - mouse_move
 
 # Maximum pixel range for random mouse movement (used by mouse_move action)
-mouse_move_range: 10
+mouse_move_range: 5
 
 # Optional log file path. Leave empty to log to stdout only.
 log_file:
 
 # Enable verbose/debug output
-verbose: false
+verbose: true
