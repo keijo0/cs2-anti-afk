@@ -2,7 +2,7 @@
 # All values are optional; defaults are used if not specified.
 
 # Title of the CS2 window (used by xdotool to find it)
-window_title: "Counter-Strike 2"
+window_title: "cs2"
 
 # Interval range in seconds between anti-AFK actions (randomized for safety)
 interval_min: 30

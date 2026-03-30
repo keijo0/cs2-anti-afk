@@ -101,7 +101,7 @@ Press `Ctrl+C` at any time.
 Copy and edit `config.yaml`:
 
 ```yaml
-window_title: "Counter-Strike 2"
+window_title: "cs2"
 interval_min: 30
 interval_max: 60
 actions:
@@ -116,7 +116,7 @@ verbose: false
 
 ## How It Works
 
-1. Uses `xdotool search --name "Counter-Strike 2"` to find the CS2 window by title
+1. Uses `xdotool search --name cs2` to find the CS2 window by title
 2. Sends key presses or mouse movements directly to that window ID — no focus change required
 3. Waits a randomized interval before the next action
 4. Repeats until stopped with `Ctrl+C`
@@ -131,9 +131,9 @@ Because input is sent to the window by ID (not by focus), the tool works while C
 Install `xdotool` for your distribution (see Installation above).
 
 **`CS2 window not found`**
-Make sure CS2 is running before starting the tool. If the window title is different, update `window_title` in `config.yaml` or check the title with:
+Make sure CS2 is running before starting the tool. The default search term is `cs2`, which matches the game's window name on Linux. If detection still fails, you can check which title to use with:
 ```bash
-xdotool search --name "" | while read id; do xdotool getwindowname "$id" 2>/dev/null; done | grep -i counter
+xdotool search --name cs2
 ```
 
 **Tool doesn't prevent AFK kick**
