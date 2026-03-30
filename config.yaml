@@ -5,8 +5,8 @@
 window_title: "cs2"
 
 # Interval range in seconds between anti-AFK actions (randomized for safety)
-interval_min: 30
-interval_max: 60
+interval_min: 5
+interval_max: 10
 
 # Actions to perform each cycle. Supported values:
 #   key_forward   - presses W

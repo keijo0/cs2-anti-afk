@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-CS2 Anti-AFK Tool using evdev
-Injects keyboard and mouse input at the system level.
+CS2 Anti-AFK Tool - Simple version for focused game window
 """
 
 import argparse
@@ -9,8 +8,7 @@ import logging
 import random
 import time
 import os
-from evdev import InputDevice, ecodes, UInput, list_devices
-from select import select
+import subprocess
 
 try:
     import yaml
@@ -29,103 +27,68 @@ DEFAULT_CONFIG = {
 SUPPORTED_ACTIONS = {"key_forward", "key_back", "key_left", "key_right", "mouse_move"}
 
 KEY_MAP = {
-    "key_forward": ecodes.KEY_W,
-    "key_back": ecodes.KEY_S,
-    "key_left": ecodes.KEY_A,
-    "key_right": ecodes.KEY_D,
+    "key_forward": "w",
+    "key_back": "s",
+    "key_left": "a",
+    "key_right": "d",
 }
 
-def find_keyboard():
-    """Auto-detect keyboard device."""
-    keyboard_candidates = []
-    
-    for path in list_devices():
-        try:
-            device = InputDevice(path)
-            caps = device.capabilities()
-            name_lower = device.name.lower()
-            
-            if ecodes.EV_KEY in caps:
-                keys = caps[ecodes.EV_KEY]
-                has_rel_movement = (ecodes.EV_REL in caps and 
-                                   ecodes.REL_X in caps[ecodes.EV_REL] and
-                                   ecodes.REL_Y in caps[ecodes.EV_REL])
-                
-                if (ecodes.KEY_SPACE in keys and ecodes.KEY_A in keys and 
-                    not has_rel_movement and "mouse" not in name_lower):
-                    priority = 0 if "kbd" in name_lower else 1000
-                    keyboard_candidates.append((priority, device, path))
-        except:
-            continue
-    
-    if not keyboard_candidates:
-        raise RuntimeError("Could not auto-detect keyboard")
-    
-    keyboard_candidates.sort(key=lambda x: x[0])
-    keyboard = keyboard_candidates[0][1]
-    logging.info(f"Auto-detected keyboard: {keyboard_candidates[0][2]} ({keyboard.name})")
-    return keyboard
+def send_key(key):
+    """Send a key press."""
+    try:
+        subprocess.run(
+            ["xdotool", "key", key],
+            check=False,
+            capture_output=True,
+            timeout=5
+        )
+        logging.debug(f"Sent key: {key}")
+    except Exception as e:
+        logging.error(f"Failed to send key: {e}")
 
-class AntiAFK:
-    def __init__(self, config):
-        self.config = config
-        self.keyboard = find_keyboard()
-        self.ui = UInput()
-        logging.info("AntiAFK initialized")
-        self.enabled = True
-
-    def send_key(self, key):
-        """Send a key press using evdev."""
-        self.ui.write(ecodes.EV_KEY, key, 1)  # Press
-        self.ui.syn()
-        time.sleep(0.05)
-        self.ui.write(ecodes.EV_KEY, key, 0)  # Release
-        self.ui.syn()
-        logging.debug(f"Sent key press")
-
-    def move_mouse(self, move_range):
-        """Send a small random mouse movement."""
-        dx = random.randint(-move_range, move_range)
-        dy = random.randint(-move_range, move_range)
-        self.ui.write(ecodes.EV_REL, ecodes.REL_X, dx)
-        self.ui.write(ecodes.EV_REL, ecodes.REL_Y, dy)
-        self.ui.syn()
+def move_mouse(move_range):
+    """Send a small random mouse movement."""
+    dx = random.randint(-move_range, move_range)
+    dy = random.randint(-move_range, move_range)
+    try:
+        subprocess.run(
+            ["xdotool", "mousemove_relative", str(dx), str(dy)],
+            check=False,
+            capture_output=True,
+            timeout=5
+        )
         logging.debug(f"Moved mouse by ({dx}, {dy})")
+    except Exception as e:
+        logging.error(f"Failed to move mouse: {e}")
 
-    def perform_action(self, action):
-        """Perform an anti-AFK action."""
-        if action in KEY_MAP:
-            self.send_key(KEY_MAP[action])
-        elif action == "mouse_move":
-            self.move_mouse(self.config.get("mouse_move_range", DEFAULT_CONFIG["mouse_move_range"]))
+def perform_action(action, mouse_move_range):
+    """Perform an anti-AFK action."""
+    if action in KEY_MAP:
+        send_key(KEY_MAP[action])
+    elif action == "mouse_move":
+        move_mouse(mouse_move_range)
 
-    def run(self):
-        """Main loop."""
-        logging.info("CS2 Anti-AFK started")
-        logging.info(f"Interval: {self.config['interval_min']:.0f}-{self.config['interval_max']:.0f}s | Actions: {', '.join(self.config['actions'])}")
-        
-        try:
-            while True:
-                for action in self.config["actions"]:
-                    if action in SUPPORTED_ACTIONS:
-                        self.perform_action(action)
-                
-                sleep_time = random.uniform(self.config["interval_min"], self.config["interval_max"])
-                logging.info(f"Actions performed. Next in {sleep_time:.1f}s")
-                time.sleep(sleep_time)
-        except KeyboardInterrupt:
-            logging.info("CS2 Anti-AFK stopped")
-        except Exception as e:
-            logging.error(f"Error: {e}")
-        finally:
-            try:
-                self.ui.close()
-                self.keyboard.close()
-            except:
-                pass
+def run_anti_afk(config):
+    """Main loop."""
+    logging.info("CS2 Anti-AFK started")
+    logging.info(f"Interval: {config['interval_min']:.0f}-{config['interval_max']:.0f}s | Actions: {', '.join(config['actions'])}")
+    logging.info("Keep CS2 window focused for input to register")
+    
+    try:
+        while True:
+            for action in config["actions"]:
+                if action in SUPPORTED_ACTIONS:
+                    perform_action(action, config.get("mouse_move_range", DEFAULT_CONFIG["mouse_move_range"]))
+            
+            sleep_time = random.uniform(config["interval_min"], config["interval_max"])
+            logging.info(f"Actions performed. Next in {sleep_time:.1f}s")
+            time.sleep(sleep_time)
+    except KeyboardInterrupt:
+        logging.info("CS2 Anti-AFK stopped")
+    except Exception as e:
+        logging.error(f"Error: {e}")
 
 def load_config(config_path):
-    """Load configuration from YAML file."""
     if yaml is None:
         return DEFAULT_CONFIG
     if not os.path.isfile(config_path):
@@ -137,7 +100,6 @@ def load_config(config_path):
     return config
 
 def validate_config(config):
-    """Validate configuration."""
     interval_min = config.get("interval_min", DEFAULT_CONFIG["interval_min"])
     interval_max = config.get("interval_max", DEFAULT_CONFIG["interval_max"])
     if interval_min <= 0 or interval_max <= 0:
@@ -149,7 +111,6 @@ def validate_config(config):
     return True
 
 def setup_logging(config):
-    """Setup logging."""
     handlers = [logging.StreamHandler()]
     log_file = config.get("log_file")
     if log_file:
@@ -164,8 +125,7 @@ def setup_logging(config):
     )
 
 def parse_args():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="CS2 Anti-AFK Tool (evdev-based)")
+    parser = argparse.ArgumentParser(description="CS2 Anti-AFK Tool")
     parser.add_argument("--config", type=str, default="config.yaml", help="Path to YAML config file")
     parser.add_argument("--interval-min", type=float, help="Min interval in seconds")
     parser.add_argument("--interval-max", type=float, help="Max interval in seconds")
@@ -177,7 +137,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-    
     config = dict(DEFAULT_CONFIG)
     if args.config:
         file_config = load_config(args.config)
@@ -202,10 +161,9 @@ def main():
         return
     
     try:
-        anti_afk = AntiAFK(config)
-        anti_afk.run()
+        run_anti_afk(config)
     except Exception as e:
-        logging.error(f"Failed to initialize: {e}")
+        logging.error(f"Failed: {e}")
 
 if __name__ == "__main__":
     main()
