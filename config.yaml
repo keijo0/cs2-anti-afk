@@ -1,0 +1,28 @@
+# CS2 Anti-AFK Configuration
+# All values are optional; defaults are used if not specified.
+
+# Title of the CS2 window (used by xdotool to find it)
+window_title: "Counter-Strike 2"
+
+# Interval range in seconds between anti-AFK actions (randomized for safety)
+interval_min: 30
+interval_max: 60
+
+# Actions to perform each cycle. Supported values:
+#   key_forward   - presses W
+#   key_back      - presses S
+#   key_left      - presses A
+#   key_right     - presses D
+#   mouse_move    - small random mouse movement
+actions:
+  - key_forward
+  - mouse_move
+
+# Maximum pixel range for random mouse movement (used by mouse_move action)
+mouse_move_range: 10
+
+# Optional log file path. Leave empty to log to stdout only.
+log_file:
+
+# Enable verbose/debug output
+verbose: false
