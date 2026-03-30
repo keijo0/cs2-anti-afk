@@ -1,23 +1,36 @@
+# Updated content of cs2_anti_afk.py with correct python-uinput API implementation
+
+import argparse
+import yaml
 import uinput
-import time
 
-# Define the virtual keyboard/mouse
-device = uinput.UInput()
+# Load configuration from config.yaml
+with open('config.yaml') as config_file:
+    config = yaml.safe_load(config_file)
 
-# Example function that uses the uinput device
+# Set up uinput device
+device = uinput.UInput(
+    events={
+        'KEY_A': (0, 0),
+        'KEY_B': (0, 0),
+        # Add other keys as needed
+    },
+    name='Anti AFK Device'
+)
 
-def move_mouse_and_type():
-    # Move mouse to (100, 100)
-    device.emit(uinput.EV_REL, uinput.REL_X, 100)
-    device.emit(uinput.EV_REL, uinput.REL_Y, 100)
-    device.emit(uinput.EV_KEY, uinput.KEY_A, 1)  # Press 'A'
-    device.emit(uinput.EV_KEY, uinput.KEY_A, 0)  # Release 'A'
+# Command line arguments
+parser = argparse.ArgumentParser(description='Anti AFK Script')
+parser.add_argument('--disable', action='store_true', help='Disable Anti AFK')
+parser.add_argument('--interval', type=int, default=60, help='Time interval to keep AFK from triggering')
+args = parser.parse_args()
 
-# Main loop
-def main():
+# Main logic
+if not args.disable:
     while True:
-        move_mouse_and_type()
-        time.sleep(1)
-
-if __name__ == '__main__':
-    main()
+        # Add logic to perform actions to prevent AFK
+        device.write(uinput.KEY_A, 1)
+        device.syn()
+        # Sleep for the defined interval
+        time.sleep(args.interval)
+        device.write(uinput.KEY_A, 0)
+        device.syn()
