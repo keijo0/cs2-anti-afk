@@ -20,9 +20,9 @@ except ImportError:
 
 DEFAULT_CONFIG = {
     "window_title": "cs2",
-    "interval_min": 1,
-    "interval_max": 10,
-    "actions": ["key_forward", "mouse_move"],
+    "interval_min": 10,
+    "interval_max": 40,
+    "actions": ["key_forward", "key_back", "key_left", "key_right", "mouse_move"],
     "mouse_move_range": 10,
     "log_file": None,
     "verbose": False,
@@ -31,11 +31,13 @@ DEFAULT_CONFIG = {
 SUPPORTED_ACTIONS = {"key_forward", "key_back", "key_left", "key_right", "mouse_move"}
 
 
-def find_cs2_window():
+def find_cs2_window(window_title=None):
     """Return the window ID of the CS2 window, or None if not found."""
+    if window_title is None:
+        window_title = DEFAULT_CONFIG["window_title"]
     try:
         result = subprocess.run(
-            ["xdotool", "search", "--name", "cs2"],
+            ["xdotool", "search", "--name", window_title],
             capture_output=True,
             text=True,
         )
@@ -213,7 +215,7 @@ def main():
     )
 
     while True:
-        window_id = find_cs2_window()
+        window_id = find_cs2_window(config.get("window_title"))
         if window_id is None:
             logging.warning(
                 "CS2 window not found (title: '%s'). Retrying in 10 seconds...",
