@@ -1,1 +1,1 @@
-uses xdotool and doesn't work on wayland
+anti afk cs2 does a mouse jitter to avoid idle kick
